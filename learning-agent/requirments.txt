@@ -1,0 +1,8 @@
+google-adk
+uvicorn
+requests
+pandas
+numpy
+dotenv
+mcp
+fastmcp

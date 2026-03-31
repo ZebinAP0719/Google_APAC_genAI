@@ -14,20 +14,24 @@ Designed to work with ADK's default web UI (adk web).
 import os
 from google.adk.agents import Agent
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StdioServerParameters
+from dotenv import load_dotenv
+from google.adk.tools.mcp_tool.mcp_session_manager import SseConnectionParams
+
+load_dotenv()
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 
 # ── MCP Toolset ──────────────────────────────────────────────────────────────
 
 mcp_server_path = os.path.join(
     os.path.dirname(__file__),
-    "..", "mcp_server", "youtube_mcp_server.py"
+     "mcp_server", "youtube_mcp_server.py"
 )
 
+
 youtube_toolset = MCPToolset(
-    connection_params=StdioServerParameters(
-        command="python",
-        args=[os.path.abspath(mcp_server_path)],
-        env={**os.environ},
-    )
+    connection_params=SseConnectionParams(
+                url=f"http://127.0.0.1:8081/sse",
+            )
 )
 
 # ── System Prompt ─────────────────────────────────────────────────────────────
@@ -152,7 +156,7 @@ Format the roadmap exactly like this:
 
 root_agent = Agent(
     name="learnpath_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     description=(
         "LearnPath: a general-purpose AI learning coach that builds personalised "
         "study roadmaps grounded in real YouTube resources, with relevance scoring."

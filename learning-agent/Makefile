@@ -24,8 +24,7 @@ help:
 
 # ── Install ──────────────────────────────────────────────────
 install:
-	python3 -m venv $(VENV)
-	$(PIP) install --upgrade pip
+	python -m venv $(VENV)
 	$(PIP) install -r requirements.txt
 	@echo "✅  Virtualenv ready. Activate with: source venv/bin/activate"
 

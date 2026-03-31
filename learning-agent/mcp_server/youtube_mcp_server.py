@@ -26,25 +26,32 @@ import logging
 import httpx
 from datetime import datetime, timezone
 from typing import Any
-from mcp.server import Server
+from mcp.server.fastmcp import FastMCP
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
+from dotenv import load_dotenv      
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [MCP] %(message)s")
 log = logging.getLogger(__name__)
 
+load_dotenv()
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 YT_SEARCH_URL   = "https://www.googleapis.com/youtube/v3/search"
 YT_VIDEOS_URL   = "https://www.googleapis.com/youtube/v3/videos"
 YT_CHANNELS_URL = "https://www.googleapis.com/youtube/v3/channels"
 
-app = Server("youtube-learning-mcp")
+app = FastMCP("youtube-learning-mcp")
+
+mcp = FastMCP(
+    name="verifact-server",
+    host="0.0.0.0",
+    port=8081,
+)
 
 # ---------------------------------------------------------------------------
 # Tool schemas
 # ---------------------------------------------------------------------------
-
-@app.list_tools()
+@mcp.tool()
 async def list_tools() -> list[Tool]:
     return [
         Tool(
@@ -145,7 +152,7 @@ async def list_tools() -> list[Tool]:
 # Tool dispatcher
 # ---------------------------------------------------------------------------
 
-@app.call_tool()
+@mcp.tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     if name == "search_learning_resources":
         result = await _search_learning_resources(**arguments)
@@ -162,8 +169,8 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 # ---------------------------------------------------------------------------
 # Tool implementations
 # ---------------------------------------------------------------------------
-
-async def _search_learning_resources(
+@mcp.tool()
+async def search_learning_resources(
     goal: str,
     topic: str,
     level: str = "any",
@@ -204,8 +211,8 @@ async def _search_learning_resources(
     scored.sort(key=lambda x: x["relevance_score"], reverse=True)
     return scored[:max_results]
 
-
-async def _get_video_details(video_id: str) -> dict:
+@mcp.tool()
+async def get_video_details(video_id: str) -> dict:
     """Fetch full metadata for a single video."""
     if not YOUTUBE_API_KEY:
         return {"error": "No YOUTUBE_API_KEY set", "video_id": video_id}
@@ -225,8 +232,8 @@ async def _get_video_details(video_id: str) -> dict:
             return {"error": f"Video {video_id} not found"}
         return _parse_video_item(items[0])
 
-
-def _score_resource_relevance(
+@mcp.tool()
+def score_resource_relevance(
     goal: str,
     topic: str,
     video_title: str,
@@ -371,8 +378,8 @@ def _score_resource_relevance(
 # ---------------------------------------------------------------------------
 # YouTube API helpers
 # ---------------------------------------------------------------------------
-
-async def _youtube_search_and_enrich(query: str, n: int) -> list[dict]:
+@mcp.tool()
+async def youtube_search_and_enrich(query: str, n: int) -> list[dict]:
     async with httpx.AsyncClient(timeout=15) as client:
         search_resp = await client.get(
             YT_SEARCH_URL,
@@ -405,8 +412,8 @@ async def _youtube_search_and_enrich(query: str, n: int) -> list[dict]:
 
     return [_parse_video_item(v) for v in video_items]
 
-
-def _parse_video_item(item: dict) -> dict:
+@mcp.tool()
+def parse_video_item(item: dict) -> dict:
     snippet  = item.get("snippet", {})
     stats    = item.get("statistics", {})
     details  = item.get("contentDetails", {})
@@ -437,8 +444,8 @@ def _parse_video_item(item: dict) -> dict:
         "like_count_int": like_count,
     }
 
-
-def _iso8601_to_minutes(duration: str) -> float:
+@mcp.tool()
+def iso8601_to_minutes(duration: str) -> float:
     match = re.match(
         r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", duration
     )
@@ -447,8 +454,8 @@ def _iso8601_to_minutes(duration: str) -> float:
     h, m, s = (int(x) if x else 0 for x in match.groups())
     return round(h * 60 + m + s / 60, 1)
 
-
-def _minutes_to_str(minutes: float) -> str:
+@mcp.tool()
+def minutes_to_str(minutes: float) -> str:
     if minutes <= 0:
         return "unknown"
     h, m = divmod(int(minutes), 60)
@@ -458,8 +465,8 @@ def _minutes_to_str(minutes: float) -> str:
 # ---------------------------------------------------------------------------
 # Mock data (used when YOUTUBE_API_KEY is not set)
 # ---------------------------------------------------------------------------
-
-def _mock_videos(topic: str, n: int) -> list[dict]:
+@mcp.tool()
+def mock_videos(topic: str, n: int) -> list[dict]:
     pool = [
         {
             "video_id": "rfscVS0vtbw",
@@ -570,4 +577,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run(transport = "sse")

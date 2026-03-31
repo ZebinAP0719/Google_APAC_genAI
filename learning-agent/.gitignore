@@ -1,1 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
 .env
+.env.local
+service-account.json
+*.env
+
+# tmp datasets
+*.csv
+
+# Development tools
+.git/
+.dockerignore
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.adk/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local test artifacts
+*.log
