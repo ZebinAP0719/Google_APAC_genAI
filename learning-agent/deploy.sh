@@ -75,6 +75,13 @@ store_secret() {
 store_secret "GOOGLE_API_KEY"   "${GOOGLE_API_KEY}"
 store_secret "YOUTUBE_API_KEY"  "${YOUTUBE_API_KEY:-mock}"
 
+echo "▶  Granting Secret Accessor role to the default compute service account…"
+PROJECT_NUMBER=$(gcloud projects describe "${GCP_PROJECT_ID}" --format="value(projectNumber)")
+gcloud projects add-iam-policy-binding "${GCP_PROJECT_ID}" \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" \
+  --quiet > /dev/null
+
 # ── Step 4: Build & push container ───────────────────────────
 echo "▶  Building and pushing container image…"
 gcloud builds submit --tag "${IMAGE}" --quiet
