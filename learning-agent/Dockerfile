@@ -21,4 +21,4 @@ EXPOSE 8080
 
 # Command to run the ADK web agent.
 # We map it to 0.0.0.0 and listen on the dynamically injected $PORT variable.
-CMD sh -c "adk web agent --host 0.0.0.0 --port ${PORT:-8080}"
+CMD sh -c "adk web --host 0.0.0.0 --port ${PORT:-8080}"
