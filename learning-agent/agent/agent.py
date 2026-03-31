@@ -23,15 +23,16 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 # ── MCP Toolset ──────────────────────────────────────────────────────────────
 
 mcp_server_path = os.path.join(
-    os.path.dirname(__file__),
-     "mcp_server", "youtube_mcp_server.py"
+    os.path.dirname(os.path.dirname(__file__)),
+    "mcp_server", "youtube_mcp_server.py"
 )
 
 
 youtube_toolset = MCPToolset(
-    connection_params=SseConnectionParams(
-                url=f"http://127.0.0.1:8081/sse",
-            )
+    connection_params=StdioServerParameters(
+        command="python",
+        args=[mcp_server_path]
+    )
 )
 
 # ── System Prompt ─────────────────────────────────────────────────────────────

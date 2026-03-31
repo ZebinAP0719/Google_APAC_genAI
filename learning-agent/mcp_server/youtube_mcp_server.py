@@ -155,11 +155,11 @@ async def list_tools() -> list[Tool]:
 @mcp.tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     if name == "search_learning_resources":
-        result = await _search_learning_resources(**arguments)
+        result = await search_learning_resources(**arguments)
     elif name == "get_video_details":
-        result = await _get_video_details(**arguments)
+        result = await get_video_details(**arguments)
     elif name == "score_resource_relevance":
-        result = _score_resource_relevance(**arguments)
+        result = score_resource_relevance(**arguments)
     else:
         raise ValueError(f"Unknown tool: {name}")
 
@@ -186,14 +186,14 @@ async def search_learning_resources(
 
     if not YOUTUBE_API_KEY:
         log.warning("No YOUTUBE_API_KEY set — returning mock data.")
-        raw_videos = _mock_videos(topic, max_results + 3)
+        raw_videos = mock_videos(topic, max_results + 3)
     else:
-        raw_videos = await _youtube_search_and_enrich(query, max_results + 3)
+        raw_videos = await youtube_search_and_enrich(query, max_results + 3)
 
     # Score every video
     scored = []
     for v in raw_videos:
-        score_data = _score_resource_relevance(
+        score_data = score_resource_relevance(
             goal=goal,
             topic=topic,
             video_title=v.get("title", ""),
@@ -230,7 +230,7 @@ async def get_video_details(video_id: str) -> dict:
         items = resp.json().get("items", [])
         if not items:
             return {"error": f"Video {video_id} not found"}
-        return _parse_video_item(items[0])
+        return parse_video_item(items[0])
 
 @mcp.tool()
 def score_resource_relevance(
@@ -410,7 +410,7 @@ async def youtube_search_and_enrich(query: str, n: int) -> list[dict]:
         stats_resp.raise_for_status()
         video_items = stats_resp.json().get("items", [])
 
-    return [_parse_video_item(v) for v in video_items]
+    return [parse_video_item(v) for v in video_items]
 
 @mcp.tool()
 def parse_video_item(item: dict) -> dict:
@@ -419,9 +419,9 @@ def parse_video_item(item: dict) -> dict:
     details  = item.get("contentDetails", {})
 
     duration_iso = details.get("duration", "PT0S")
-    duration_min = _iso8601_to_minutes(duration_iso)
-    view_count   = int(stats.get("viewCount", 0))
-    like_count   = int(stats.get("likeCount", 0))
+    duration_min = iso8601_to_minutes(duration_iso)
+    view_count   = int(stats.get("viewCount", "0") if stats.get("viewCount") else 0)
+    like_count   = int(stats.get("likeCount", "0") if stats.get("likeCount") else 0)
     published    = snippet.get("publishedAt", "2020-01-01")[:10]
     pub_year     = int(published[:4]) if published else 2020
 
@@ -437,7 +437,7 @@ def parse_video_item(item: dict) -> dict:
         "tags":           snippet.get("tags", []),
         "duration_iso":   duration_iso,
         "duration_minutes": duration_min,
-        "duration_str":   _minutes_to_str(duration_min),
+        "duration_str":   minutes_to_str(duration_min),
         "view_count":     f"{view_count:,}",
         "view_count_int": view_count,
         "like_count":     f"{like_count:,}",
@@ -577,4 +577,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    mcp.run(transport = "sse")
+    mcp.run(transport="stdio")
